@@ -3,11 +3,13 @@ import {
   Search, QrCode, Contact, Phone, Landmark, AtSign, ArrowLeftRight, 
   Receipt, Smartphone, ChevronDown, ArrowLeft, X, Camera, 
   User as UserIcon, CreditCard, History, ShieldCheck, Info,
-  CheckCircle2, AlertCircle, IndianRupee
+  CheckCircle2, AlertCircle, IndianRupee, Download
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion, AnimatePresence } from 'motion/react';
+import { installPWA, isStandalone } from './pwa-install';
+import { InstallDebug } from './InstallDebug';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -22,6 +24,78 @@ interface Transaction {
 }
 
 // --- Components ---
+
+const InstallButton = () => {
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+
+  useEffect(() => {
+    // Check if already running as PWA
+    if (isStandalone()) {
+      setIsInstalled(true);
+      return;
+    }
+
+    // Listen for installable event
+    const handleInstallable = () => {
+      setIsInstallable(true);
+    };
+
+    const handleInstalled = () => {
+      setIsInstallable(false);
+      setIsInstalled(true);
+    };
+
+    window.addEventListener('pwa-installable', handleInstallable);
+    window.addEventListener('pwa-installed', handleInstalled);
+
+    return () => {
+      window.removeEventListener('pwa-installable', handleInstallable);
+      window.removeEventListener('pwa-installed', handleInstalled);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    const success = await installPWA();
+    if (success) {
+      setIsInstallable(false);
+      setIsInstalled(true);
+    }
+  };
+
+  if (isInstalled || !isInstallable) {
+    return null;
+  }
+
+  return (
+    <motion.div
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 100, opacity: 0 }}
+      className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto"
+    >
+      <div className="bg-gpay-blue text-white rounded-2xl shadow-2xl p-4 flex items-center gap-4">
+        <div className="flex-1">
+          <h3 className="font-semibold text-sm mb-1">Install Hikma App</h3>
+          <p className="text-xs opacity-90">Get quick access and work offline</p>
+        </div>
+        <button
+          onClick={handleInstall}
+          className="bg-white text-gpay-blue px-4 py-2 rounded-full font-semibold text-sm flex items-center gap-2 hover:bg-gray-100 transition-colors active:scale-95"
+        >
+          <Download className="w-4 h-4" />
+          Install
+        </button>
+        <button
+          onClick={() => setIsInstallable(false)}
+          className="p-1 hover:bg-white/10 rounded-full transition-colors"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
 
 const ActionItem = ({ icon: Icon, label, onClick }: any) => (
   <button 
@@ -973,6 +1047,12 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      
+      {/* PWA Install Button */}
+      <InstallButton />
+      
+      {/* PWA Debug Tool - Remove in production */}
+      <InstallDebug />
     </div>
   );
 }
