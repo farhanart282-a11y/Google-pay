@@ -1,0 +1,5 @@
+{
+  "name": "Google Pay Clone",
+  "description": "A clean, functional mobile payment interface inspired by Google Pay, featuring a search bar, action grid, and people section.",
+  "requestFramePermissions": []
+}

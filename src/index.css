@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-gpay-blue: #1a73e8;
+  --color-gpay-bg: #f8f9fa;
+  --color-gpay-banner: #e8f0fe;
+}
+
+body {
+  background-color: var(--color-gpay-bg);
+  color: #3c4043;
+  font-family: var(--font-sans);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
