@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hikma-app-v1';
+const CACHE_NAME = 'google-pay-v1';
 const urlsToCache = [
   '/',
   '/index.html',
