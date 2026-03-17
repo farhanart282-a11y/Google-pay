@@ -3,13 +3,11 @@ import {
   Search, QrCode, Contact, Phone, Landmark, AtSign, ArrowLeftRight, 
   Receipt, Smartphone, ChevronDown, ArrowLeft, X, Camera, 
   User as UserIcon, CreditCard, History, ShieldCheck, Info,
-  CheckCircle2, AlertCircle, IndianRupee, Download
+  CheckCircle2, AlertCircle, IndianRupee
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion, AnimatePresence } from 'motion/react';
-import { installPWA, isStandalone } from './pwa-install';
-import { InstallDebug } from './InstallDebug';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,78 +22,6 @@ interface Transaction {
 }
 
 // --- Components ---
-
-const InstallButton = () => {
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    // Check if already running as PWA
-    if (isStandalone()) {
-      setIsInstalled(true);
-      return;
-    }
-
-    // Listen for installable event
-    const handleInstallable = () => {
-      setIsInstallable(true);
-    };
-
-    const handleInstalled = () => {
-      setIsInstallable(false);
-      setIsInstalled(true);
-    };
-
-    window.addEventListener('pwa-installable', handleInstallable);
-    window.addEventListener('pwa-installed', handleInstalled);
-
-    return () => {
-      window.removeEventListener('pwa-installable', handleInstallable);
-      window.removeEventListener('pwa-installed', handleInstalled);
-    };
-  }, []);
-
-  const handleInstall = async () => {
-    const success = await installPWA();
-    if (success) {
-      setIsInstallable(false);
-      setIsInstalled(true);
-    }
-  };
-
-  if (isInstalled || !isInstallable) {
-    return null;
-  }
-
-  return (
-    <motion.div
-      initial={{ y: 100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 100, opacity: 0 }}
-      className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto"
-    >
-      <div className="bg-gpay-blue text-white rounded-2xl shadow-2xl p-4 flex items-center gap-4">
-        <div className="flex-1">
-          <h3 className="font-semibold text-sm mb-1">Install Hikma App</h3>
-          <p className="text-xs opacity-90">Get quick access and work offline</p>
-        </div>
-        <button
-          onClick={handleInstall}
-          className="bg-white text-gpay-blue px-4 py-2 rounded-full font-semibold text-sm flex items-center gap-2 hover:bg-gray-100 transition-colors active:scale-95"
-        >
-          <Download className="w-4 h-4" />
-          Install
-        </button>
-        <button
-          onClick={() => setIsInstallable(false)}
-          className="p-1 hover:bg-white/10 rounded-full transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
-      </div>
-    </motion.div>
-  );
-};
 
 const ActionItem = ({ icon: Icon, label, onClick }: any) => (
   <button 
@@ -330,102 +256,57 @@ const BillsView = ({ onBack, onSelect }: { onBack: () => void, onSelect: (data: 
 
 const PaymentView = ({ transaction, onBack, onPay }: { transaction: Transaction, onBack: () => void, onPay: (amount: string) => void }) => {
   const [amount, setAmount] = useState('');
-  const [note, setNote] = useState('');
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
-      {/* Circular ripple background effect */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="absolute w-[600px] h-[600px] rounded-full border border-blue-100/30" />
-        <div className="absolute w-[500px] h-[500px] rounded-full border border-blue-100/30" />
-        <div className="absolute w-[400px] h-[400px] rounded-full border border-blue-100/30" />
-        <div className="absolute w-[300px] h-[300px] rounded-full border border-blue-100/30" />
-        <div className="absolute w-[200px] h-[200px] rounded-full border border-blue-100/30" />
-      </div>
-
-      {/* Header */}
-      <header className="p-4 flex items-center justify-between relative z-10">
-        <button onClick={onBack} className="p-2 hover:bg-white/50 rounded-full transition-colors">
-          <X className="w-6 h-6 text-gray-600" />
-        </button>
+    <div className="flex flex-col h-full bg-white">
+      <header className="p-4 flex items-center justify-between">
+        <button onClick={onBack} className="p-1"><X className="w-6 h-6 text-gray-700" /></button>
+        <div className="flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold mb-1">
+            {transaction.recipient[0]}
+          </div>
+          <span className="text-sm font-medium text-gray-800">Paying {transaction.recipient}</span>
+          <span className="text-[10px] text-gray-500">{transaction.id || 'Verified Merchant'}</span>
+        </div>
         <div className="w-6" />
-        <button className="p-2 hover:bg-white/50 rounded-full transition-colors">
-          <span className="text-gray-600 text-xl">⋮</span>
-        </button>
       </header>
 
-      {/* Recipient Info */}
-      <div className="flex flex-col items-center mt-4 relative z-10">
-        <div className="w-16 h-16 rounded-full bg-pink-200 flex items-center justify-center text-pink-700 font-bold text-2xl mb-3">
-          {transaction.recipient[0]}
-        </div>
-        <h2 className="text-lg font-medium text-gray-700 mb-1">
-          Paying {transaction.recipient}
-        </h2>
-        {transaction.id && (
-          <p className="text-xs text-gray-500">{transaction.id}</p>
-        )}
-      </div>
-
-      {/* Amount Input */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 relative z-10">
-        <div className="flex items-baseline gap-1 mb-8">
-          <span className="text-5xl font-light text-gray-800">$</span>
+      <div className="flex-1 flex flex-col items-center justify-center px-8">
+        <div className="flex items-center gap-2 mb-2">
+          <IndianRupee className="w-8 h-8 text-gray-800" />
           <input 
             type="number" 
             autoFocus
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0"
-            className="text-7xl font-light text-gray-800 outline-none bg-transparent text-center placeholder:text-gray-300 w-48"
+            className="text-6xl font-semibold text-gray-800 outline-none w-full text-center placeholder:text-gray-200"
           />
         </div>
-        
-        <input 
-          type="text"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="For The Batman"
-          className="text-center text-gray-500 text-base outline-none bg-transparent placeholder:text-gray-400 w-full max-w-xs"
-        />
+        <div className="bg-gray-100 px-4 py-2 rounded-xl text-sm text-gray-600 mb-12">
+          Add a note
+        </div>
       </div>
 
-      {/* Payment Method & Button */}
-      <div className="p-6 relative z-10">
-        {/* Payment Method */}
-        <div className="flex items-center justify-between mb-4 bg-white/80 backdrop-blur-sm p-4 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6 bg-gray-50 p-4 rounded-2xl border border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 bg-white border border-gray-200 rounded flex items-center justify-center p-1">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/e/e1/HDFC_Bank_logo.svg" alt="Bank" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-800">Personal Checking ••••</span>
-              <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
-                <span className="text-blue-600">⚡</span>
-                <span>Instant transfer, no fee</span>
-              </div>
+              <span className="text-xs font-medium text-gray-800">HDFC Bank •••• 1234</span>
+              <span className="text-[10px] text-gray-500">Primary account</span>
             </div>
           </div>
-          <ChevronDown className="w-5 h-5 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-gray-400" />
         </div>
-
-        {/* Warning Message */}
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
-          <div className="text-xs text-gray-700 leading-relaxed">
-            <p className="font-semibold mb-1">This is the first payment between you and this person using Google Pay</p>
-            <p className="text-gray-600">Always verify the info of the person you're paying before sending money.</p>
-            <p className="text-gray-600 mt-1">Any fraudulent transactions may result in the loss of your money with no recourse</p>
-          </div>
-        </div>
-
-        {/* Pay Button */}
         <button 
           disabled={!amount || parseFloat(amount) <= 0}
           onClick={() => onPay(amount)}
-          className="w-full bg-blue-600 text-white py-4 rounded-full font-semibold text-lg shadow-lg shadow-blue-200 active:scale-95 transition-transform disabled:opacity-50 disabled:bg-gray-300 disabled:active:scale-100"
+          className="w-full bg-gpay-blue text-white py-4 rounded-full font-semibold shadow-lg shadow-blue-100 active:scale-95 transition-transform disabled:opacity-50 disabled:active:scale-100"
         >
-          Pay ${amount || '0.00'}
+          Pay ₹{amount || '0'}
         </button>
       </div>
     </div>
@@ -1092,12 +973,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* PWA Install Button */}
-      <InstallButton />
-      
-      {/* PWA Debug Tool - Remove in production */}
-      <InstallDebug />
     </div>
   );
 }
